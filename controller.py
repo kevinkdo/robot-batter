@@ -15,6 +15,8 @@ POST_RECOVER = [0.0, 1.0, -.98, .8, math.pi/2, 0.0, 0.0]
 BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
 
+TRAVELTIME = 0.8
+
 class MyController:
     """Attributes:
     - world: the WorldModel instance used for planning.
@@ -72,6 +74,14 @@ class MyController:
                 -0.5 < v[0] and v[0] < +0.5 and
                 -0.5 < v[1] and v[1] < +0.5)
 
+    '''Returns whether center of goal will be free in TRAVELTIME seconds'''
+    def noblock(self):
+        for goalie in GOALIES:
+            yhat = self.goaliePredictor.predict(self.t + TRAVELTIME, goalie)[1]
+            if abs(yhat) <= .5:
+                return False
+        return True
+
     def myPlayerLogic(self,
                       dt,
                       sensorReadings,
@@ -105,6 +115,8 @@ class MyController:
         qsns = robotController.getSensedConfig()
         vsns = robotController.getSensedVelocity()
 
+        print objectStateEstimate.get(GOALIES[0]).meanPosition()[1]
+
         if self.t > dt:
             self.ballPredictor.addPoint(self.t, objectStateEstimate.get(BALL))
             for goalie in GOALIES:
@@ -116,7 +128,7 @@ class MyController:
             if self.close(qsns, self.qdes):
                 self.state = 'waiting'
         elif self.state == 'waiting':
-            if self.ballWaiting(objectStateEstimate.get(BALL)):
+            if self.ballWaiting(objectStateEstimate.get(BALL)) and self.noblock():
                 self.state = 'stroke'
         elif self.state == 'stroke':
             self.qdes = POST_STROKE

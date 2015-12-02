@@ -2,6 +2,8 @@ import numpy as np
 import math
 from scipy.optimize import curve_fit
 
+MAX_HISTORY = 50
+
 class Predictor:
     def __init__(self):
         self.objects = dict()
@@ -13,6 +15,8 @@ class Predictor:
         if not o.name in self.objects:
             self.objects[o.name] = []
         self.objects[o.name].append((t, o.meanPosition(), o.meanVelocity()))
+        if len(self.objects[o.name]) > MAX_HISTORY:
+            self.objects[o.name].pop(0)
 
     '''name: string name of object
        returns (t list, position list, velocity list)'''
@@ -58,6 +62,9 @@ class YSinePredictor(Predictor):
         tuples = self.objects[name]
         tlist = map(lambda x: x[0], tuples)
         ylist = map(lambda x: x[1][1], tuples)
-        popt, pcov = curve_fit(f, tlist, ylist)
+        try:
+            self.popt, pcov = curve_fit(f, tlist, ylist) #TODO deal with RuntimeError
+        except RuntimeError:
+            pass
 
-        return (0, f(t, popt[0], popt[1], popt[2]), 0)
+        return (0, f(t, self.popt[0], self.popt[1], self.popt[2]), 0)
