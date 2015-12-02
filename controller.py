@@ -29,6 +29,7 @@ class MyController:
         self.objectStateEstimator = None
         self.state = None
         self.robotController = robotController
+        self.t = 0
         self.reset(robotController)
         
     def reset(self,robotController):
@@ -37,6 +38,7 @@ class MyController:
         self.objectEstimates = None
         self.state = 'pre_stroke'
         self.qdes = robotController.getCommandedConfig()
+        self.t = 0
 
     '''Returns whether q1 is close to q2'''
     def close(self, q1, q2):
@@ -79,6 +81,7 @@ class MyController:
           trajectory to execute via robotController.set/addMilestone().
           (if you are into masochism you can use robotController.setTorque())
         """
+        self.t += dt
         qcmd = robotController.getCommandedConfig()
         vcmd = robotController.getCommandedVelocity()
         qsns = robotController.getSensedConfig()
