@@ -115,8 +115,6 @@ class MyController:
         qsns = robotController.getSensedConfig()
         vsns = robotController.getSensedVelocity()
 
-        print objectStateEstimate.get(GOALIES[0]).meanPosition()[1]
-
         if self.t > dt:
             self.ballPredictor.addPoint(self.t, objectStateEstimate.get(BALL))
             for goalie in GOALIES:
@@ -127,28 +125,26 @@ class MyController:
             robotController.setPIDCommand(self.qdes,[0.0]*7)
             if self.close(qsns, self.qdes):
                 self.state = 'waiting'
-        elif self.state == 'waiting':
+        if self.state == 'waiting':
             if self.ballWaiting(objectStateEstimate.get(BALL)) and self.noblock():
                 self.state = 'stroke'
-        elif self.state == 'stroke':
+        if self.state == 'stroke':
             self.qdes = POST_STROKE
             robotController.setPIDCommand(self.qdes,[0.0]*7)
             if self.close(qsns, self.qdes):
                 self.state = 'pre_recover'
-        elif self.state == 'pre_recover':
+        if self.state == 'pre_recover':
             self.qdes = PREP_RECOVER
             robotController.setPIDCommand(self.qdes,[0.0]*7)
             if self.close(qsns, self.qdes):
                 self.state = 'recover'
-        elif self.state == 'recover':
+        if self.state == 'recover':
             self.qdes = POST_RECOVER
             robotController.setPIDCommand(self.qdes,[0.0]*7)
             if self.close(qsns, self.qdes):
                 self.state = 'pre_stroke'
-        elif self.state == 'user':
+        if self.state == 'user':
             robotController.setPIDCommand(self.qdes,[0.0]*7)
-        else:
-            pass
 
         sys.stdout.flush()
         return
