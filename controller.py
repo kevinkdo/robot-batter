@@ -131,7 +131,7 @@ class MyController:
         if self.state == 'user':
             #note: joint 0 is a dummy joint
             upkeys = {'1':1,'2':2,'3':3,'4':4,'5':5,'6':6}
-            downkeys = {'q':1,'w':2,'e':3,'r':4,'t':5,'y':6}
+            downkeys = {'\'':1,',':2,'.':3,'p':4,'y':5,'f':6}
             if key in upkeys:
                 self.qdes[upkeys[key]] += 0.1
             elif key in downkeys:
