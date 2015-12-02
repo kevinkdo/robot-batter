@@ -1,13 +1,19 @@
 from klampt import *
 from klampt import gldraw
 from stateestimation import *
+from stateprediction import *
 from OpenGL.GL import *
 import sys
+import time
+import matplotlib.pyplot as plot
 
 PREP_STROKE = [0.0, 1.0, -.98, 1.32, math.pi/2, 0.0, 0.0]
 POST_STROKE = [0.0, 2.0, -.98, 1.32, math.pi/2, 0.0, 0.0]
 PREP_RECOVER = [0.0, 2.0, -.98, .8, math.pi/2, 0.0, 0.0]
 POST_RECOVER = [0.0, 1.0, -.98, .8, math.pi/2, 0.0, 0.0]
+
+BALL = (1, 0, 0, 1)
+GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
 
 class MyController:
     """Attributes:
@@ -27,6 +33,8 @@ class MyController:
     def __init__(self,world,robotController):
         self.world = world
         self.objectStateEstimator = None
+        self.ballPredictor = None
+        self.goaliePredictor = None
         self.state = None
         self.robotController = robotController
         self.t = 0
@@ -35,6 +43,8 @@ class MyController:
     def reset(self,robotController):
         """Called on initialization, and when the simulator is reset."""
         self.objectStateEstimator = MyObjectStateEstimator()
+        self.ballPredictor = LinearPredictor()
+        self.goaliePredictor = LinearPredictor()# TODO switch to SinePredictor
         self.objectEstimates = None
         self.state = 'pre_stroke'
         self.qdes = robotController.getCommandedConfig()
@@ -51,7 +61,6 @@ class MyController:
         for i in range(len(q1)):
             sum += abs(q1[i] - q2[i])
 
-        print sum
         return sum < 1e-1
 
     def myPlayerLogic(self,
@@ -87,8 +96,18 @@ class MyController:
         qsns = robotController.getSensedConfig()
         vsns = robotController.getSensedVelocity()
 
-        print self.state
-        sys.stdout.flush()
+        if self.t > dt:
+            self.ballPredictor.addPoint(self.t, objectStateEstimate.get(BALL))
+            for goalie in GOALIES:
+                self.goaliePredictor.addPoint(self.t, objectStateEstimate.get(goalie))
+
+        if self.t > 2.0:
+            tlist, positionlist, _ = self.goaliePredictor.getHistory(GOALIES[0])
+            xlist = map(lambda x: x[1], positionlist)
+            plot.scatter(tlist, xlist)
+            plot.scatter(5.0, self.goaliePredictor.predict(5.0, GOALIES[1])[1])
+            plot.show()
+            time.sleep(1000)
 
         if self.state == 'pre_stroke':
             self.qdes = PREP_STROKE
@@ -114,6 +133,8 @@ class MyController:
             robotController.setPIDCommand(self.qdes,[0.0]*7)
         else:
             pass
+
+        sys.stdout.flush()
         return
         
     def loop(self,dt,robotController,sensorReadings):
