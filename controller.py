@@ -2,6 +2,12 @@ from klampt import *
 from klampt import gldraw
 from stateestimation import *
 from OpenGL.GL import *
+import sys
+
+PREP_STROKE = [0.0, 1.0, -.98, 1.32, math.pi/2, 0.0, 0.0]
+POST_STROKE = [0.0, 2.0, -.98, 1.32, math.pi/2, 0.0, 0.0]
+PREP_RECOVER = [0.0, 2.0, -.98, .8, math.pi/2, 0.0, 0.0]
+POST_RECOVER = [0.0, 1.0, -.98, .8, math.pi/2, 0.0, 0.0]
 
 class MyController:
     """Attributes:
@@ -26,19 +32,25 @@ class MyController:
         self.reset(robotController)
         
     def reset(self,robotController):
-        """Called on initialization, and when the simulator is reset.
-        TODO: You may wish to fill this in with custom initialization code.
-        """
+        """Called on initialization, and when the simulator is reset."""
         self.objectStateEstimator = MyObjectStateEstimator()
         self.objectEstimates = None
-        self.state = 'waiting'
-        #TODO: you may want to do more here to set up your
-        #state machine and other initial settings of your controller.
-        #The 'waiting' state is just a placeholder and you are free to
-        #change it as you see fit.
-
+        self.state = 'pre_stroke'
         self.qdes = robotController.getCommandedConfig()
-        pass
+
+    '''Returns whether q1 is close to q2'''
+    def close(self, q1, q2):
+        if len(q1) != len(q2):
+            print "self.close requires arguments of same length"
+            sys.stdout.flush()
+            sys.exit()
+            return False
+        sum = 0
+        for i in range(len(q1)):
+            sum += abs(q1[i] - q2[i])
+
+        print sum
+        return sum < 1e-1
 
     def myPlayerLogic(self,
                       dt,
@@ -67,20 +79,37 @@ class MyController:
           trajectory to execute via robotController.set/addMilestone().
           (if you are into masochism you can use robotController.setTorque())
         """
-        #these are pulled out here for your convenience
         qcmd = robotController.getCommandedConfig()
         vcmd = robotController.getCommandedVelocity()
         qsns = robotController.getSensedConfig()
         vsns = robotController.getSensedVelocity()
-        if self.state == 'waiting':
-            #TODO: do something...
-            pass
+
+        print self.state
+        sys.stdout.flush()
+
+        if self.state == 'pre_stroke':
+            self.qdes = PREP_STROKE
+            robotController.setPIDCommand(self.qdes,[0.0]*7)
+            if self.close(qsns, self.qdes):
+                self.state = 'stroke'
+        elif self.state == 'stroke':
+            self.qdes = POST_STROKE
+            robotController.setPIDCommand(self.qdes,[0.0]*7)
+            if self.close(qsns, self.qdes):
+                self.state = 'pre_recover'
+        elif self.state == 'pre_recover':
+            self.qdes = PREP_RECOVER
+            robotController.setPIDCommand(self.qdes,[0.0]*7)
+            if self.close(qsns, self.qdes):
+                self.state = 'recover'
+        elif self.state == 'recover':
+            self.qdes = POST_RECOVER
+            robotController.setPIDCommand(self.qdes,[0.0]*7)
+            if self.close(qsns, self.qdes):
+                self.state = 'pre_stroke'
         elif self.state == 'user':
-            #use the user-mode control
             robotController.setPIDCommand(self.qdes,[0.0]*7)
         else:
-            #TODO: do something else...
-            #may want to add other states into this if block...
             pass
         return
         
@@ -102,11 +131,8 @@ class MyController:
         if self.objectStateEstimator and 'blobdetector' in sensorReadings:
             multiObjectStateEstimate = self.objectStateEstimator.update(sensorReadings['blobdetector'])
             self.objectEstimates = multiObjectStateEstimate
-            #multiObjectStateEstimate is now a MultiObjectStateEstimate (see stateestimator.py)
         if 'omniscient' in sensorReadings:
             omniscientObjectState = OmniscientStateEstimator().update(sensorReadings['omniscient'])
-            #omniscientObjectStateEstimate is now a MultiObjectStateEstimate (see stateestimator.py)
-            
             #TODO: Comment out the following line when you are ready to test your state estimator
             multiObjectStateEstimate  = omniscientObjectState
 
@@ -170,8 +196,8 @@ class MyController:
                 #TODO: are you doing event C? If so, you should
                 #set gravity=0 to get more useful visual feedback
                 #about your state estimates.
-                #gravity = 0
-                gravity = 9.8
+                gravity = 0
+                #gravity = 9.8
                 for i in range(20):
                     t = i*0.05
                     glVertex3f(*vectorops.sub(vectorops.madd(x,v,t),[0,0,0.5*gravity*t*t]))
