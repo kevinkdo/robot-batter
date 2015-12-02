@@ -63,6 +63,15 @@ class MyController:
 
         return sum < 1e-1
 
+    '''Returns whether the ball is waiting to be struck'''
+    def ballWaiting(self, ballState):
+        p = ballState.meanPosition()
+        v = ballState.meanVelocity()
+        return (-1.5 < p[0] and p[0] < -0.5 and
+                -1.0 < p[1] and p[1] < +0.0 and
+                -0.5 < v[0] and v[0] < +0.5 and
+                -0.5 < v[1] and v[1] < +0.5)
+
     def myPlayerLogic(self,
                       dt,
                       sensorReadings,
@@ -101,23 +110,13 @@ class MyController:
             for goalie in GOALIES:
                 self.goaliePredictor.addPoint(self.t, objectStateEstimate.get(goalie))
 
-        if self.t > 2.0:
-            tlist, positionlist, _ = self.goaliePredictor.getHistory(GOALIES[0])
-            ylist = map(lambda x: x[1], positionlist)
-            plot.scatter(tlist, ylist)
-            plot.scatter(2.5, self.goaliePredictor.predict(2.5, GOALIES[1])[1])
-            plot.scatter(3.0, self.goaliePredictor.predict(3.0, GOALIES[1])[1])
-            plot.scatter(3.5, self.goaliePredictor.predict(3.5, GOALIES[1])[1])
-            plot.scatter(4.0, self.goaliePredictor.predict(4.0, GOALIES[1])[1])
-            plot.scatter(4.5, self.goaliePredictor.predict(4.5, GOALIES[1])[1])
-            plot.scatter(5.0, self.goaliePredictor.predict(5.0, GOALIES[1])[1])
-            plot.show()
-            time.sleep(1000)
-
         if self.state == 'pre_stroke':
             self.qdes = PREP_STROKE
             robotController.setPIDCommand(self.qdes,[0.0]*7)
             if self.close(qsns, self.qdes):
+                self.state = 'waiting'
+        elif self.state == 'waiting':
+            if self.ballWaiting(objectStateEstimate.get(BALL)):
                 self.state = 'stroke'
         elif self.state == 'stroke':
             self.qdes = POST_STROKE
