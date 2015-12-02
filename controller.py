@@ -44,7 +44,7 @@ class MyController:
         """Called on initialization, and when the simulator is reset."""
         self.objectStateEstimator = MyObjectStateEstimator()
         self.ballPredictor = LinearPredictor()
-        self.goaliePredictor = LinearPredictor()# TODO switch to SinePredictor
+        self.goaliePredictor = YSinePredictor()
         self.objectEstimates = None
         self.state = 'pre_stroke'
         self.qdes = robotController.getCommandedConfig()
@@ -103,8 +103,13 @@ class MyController:
 
         if self.t > 2.0:
             tlist, positionlist, _ = self.goaliePredictor.getHistory(GOALIES[0])
-            xlist = map(lambda x: x[1], positionlist)
-            plot.scatter(tlist, xlist)
+            ylist = map(lambda x: x[1], positionlist)
+            plot.scatter(tlist, ylist)
+            plot.scatter(2.5, self.goaliePredictor.predict(2.5, GOALIES[1])[1])
+            plot.scatter(3.0, self.goaliePredictor.predict(3.0, GOALIES[1])[1])
+            plot.scatter(3.5, self.goaliePredictor.predict(3.5, GOALIES[1])[1])
+            plot.scatter(4.0, self.goaliePredictor.predict(4.0, GOALIES[1])[1])
+            plot.scatter(4.5, self.goaliePredictor.predict(4.5, GOALIES[1])[1])
             plot.scatter(5.0, self.goaliePredictor.predict(5.0, GOALIES[1])[1])
             plot.show()
             time.sleep(1000)
