@@ -7,17 +7,16 @@ import sys
 import time
 import matplotlib.pyplot as plot
 
-PRE_CYCLE0 = [0.0, 1.0, -.5, 1.32, math.pi/2, 0.0, 0.0]
-PREP_STROKE = [0.0, 1.0, -.98, 1.32, math.pi/2, 0.0, 0.0]
-POST_STROKE = [0.0, 2.0, -.98, 1.32, math.pi/2, 0.0, 0.0]
-PREP_RECOVER = [0.0, 2.0, -.98, .8, math.pi/2, 0.0, 0.0]
-POST_RECOVER = [0.0, 1.0, -.98, .8, math.pi/2, 0.0, 0.0]
+PRE_CYCLE0 = np.array([0.0, 1.0, -.5, 1.32, math.pi/2, 0.0, 0.0])
+PREP_STROKE = np.array([0.0, 1.0, -.98, 1.32, math.pi/2, 0.0, 0.0])
+POST_STROKE = np.array([0.0, 2.0, -.98, 1.32, math.pi/2, 0.0, 0.0])
+PREP_RECOVER = np.array([0.0, 2.0, -.98, .8, math.pi/2, 0.0, 0.0])
+POST_RECOVER = np.array([0.0, 1.0, -.98, .8, math.pi/2, 0.0, 0.0])
 
 BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
 
 TRAVELTIME = 0.8
-STROKE_FRAMES = 10
 
 class MyController:
     """Attributes:
@@ -41,7 +40,6 @@ class MyController:
         self.goaliePredictor = None
         self.state = None
         self.robotController = robotController
-        self.t = 0
         self.reset(robotController)
         
     def reset(self,robotController):
@@ -53,6 +51,7 @@ class MyController:
         self.state = 'precycle0'
         self.qdes = robotController.getCommandedConfig()
         self.t = 0
+        self.substate = 0
 
     '''Returns whether q1 is close to q2'''
     def close(self, q1, q2):
@@ -122,25 +121,33 @@ class MyController:
             for goalie in GOALIES:
                 self.goaliePredictor.addPoint(self.t, objectStateEstimate.get(goalie))
 
-        def moveAndGoToState(qdes, next_state):
-            self.qdes = qdes
-            robotController.setPIDCommand(self.qdes,[0.0]*7)
+        ''' Confusing function that plans path on first call, maintains state between calls
+            and keeps on going on the pre-planned path'''
+        def moveAndGoToState(qdes, next_state, frames=1):
+            if self.substate == 0:
+                self.qdes = qdes
+                self.start = qsns
+            if self.substate < frames:
+                self.substate += 1
+            next_goal = self.start + (1.0 * self.substate / frames) * (self.qdes - self.start)
+            robotController.setPIDCommand(next_goal,[0.0]*7)
             if self.close(qsns, self.qdes):
                 self.state = next_state
+                self.substate = 0
 
         if self.state == 'precycle0':
-            moveAndGoToState(PRE_CYCLE0, 'pre_stroke')
+            moveAndGoToState(PRE_CYCLE0, 'pre_stroke', 20)
         if self.state == 'pre_stroke':
-            moveAndGoToState(PREP_STROKE, 'waiting')
+            moveAndGoToState(PREP_STROKE, 'waiting', 10)
         if self.state == 'waiting':
             if self.ballWaiting(objectStateEstimate.get(BALL)) and self.noblock():
                 self.state = 'stroke'
         if self.state == 'stroke':
-            moveAndGoToState(POST_STROKE, 'pre_recover')
+            moveAndGoToState(POST_STROKE, 'pre_recover', 25)
         if self.state == 'pre_recover':
-            moveAndGoToState(PREP_RECOVER, 'recover')
+            moveAndGoToState(PREP_RECOVER, 'recover', 10)
         if self.state == 'recover':
-            moveAndGoToState(POST_RECOVER, 'pre_stroke')
+            moveAndGoToState(POST_RECOVER, 'pre_stroke', 25)
         if self.state == 'user':
             robotController.setPIDCommand(self.qdes,[0.0]*7)
 
