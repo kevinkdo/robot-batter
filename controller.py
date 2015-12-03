@@ -15,7 +15,7 @@ POST_RECOVER = np.array([0.0, 1.0, -.98, .8, math.pi/2, 0.0, 0.0])
 
 BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
-TRAVELTIMES = [2.08, 2.46, 2.76]
+TRAVELTIMES = [1.94, 2.3, 2.6]
 
 class MyController:
     """Attributes:
@@ -142,7 +142,7 @@ class MyController:
             if self.ballWaiting(objectStateEstimate.get(BALL)) and self.noblock():
                 self.state = 'stroke'
         if self.state == 'stroke':
-            moveAndGoToState(POST_STROKE, 'pre_recover', 25)
+            moveAndGoToState(POST_STROKE, 'pre_recover', 22)
         if self.state == 'pre_recover':
             moveAndGoToState(PREP_RECOVER, 'recover', 10)
         if self.state == 'recover':
@@ -150,8 +150,8 @@ class MyController:
         if self.state == 'user':
             robotController.setPIDCommand(self.qdes,[0.0]*7)
 
-        print self.t
-        print self.state
+        #print self.t
+        #print self.state
         sys.stdout.flush()
         return
         
