@@ -55,19 +55,18 @@ class YSinePredictor(Predictor):
        name: string name of object
        returns (x, y, z) of predicted state'''
     def predict(self, t, name):
-        def f(x, a, b, c):
-            return a * np.sin(b * x + c)
+        def f(x, a, b, c, d):
+            return a * np.sin(b * x + c) + d
 
         if not name in self.objects:
             return None
         tuples = self.objects[name]
-        tlist = map(lambda x: x[0], tuples)
-        ylist = map(lambda x: x[1][1], tuples)
+        tlist = np.array(map(lambda x: x[0], tuples))
+        ylist = np.array(map(lambda x: x[1][1], tuples))
         try:
-            self.popt, pcov = curve_fit(f, tlist, ylist, maxfev=2500)
-            print self.popt
+            self.popt, _ = curve_fit(f, tlist, ylist, maxfev=2500)
         except RuntimeError as e:
             print "ERROR: ", e
             sys.stdout.flush()
 
-        return (0, f(t, self.popt[0], self.popt[1], self.popt[2]), 0)
+        return (0, f(t, self.popt[0], self.popt[1], self.popt[2], self.popt[3]), 0)
