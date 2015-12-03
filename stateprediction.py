@@ -1,8 +1,9 @@
 import numpy as np
 import math
+import sys
 from scipy.optimize import curve_fit
 
-MAX_HISTORY = 50
+MAX_HISTORY = 300
 
 class Predictor:
     def __init__(self):
@@ -63,8 +64,10 @@ class YSinePredictor(Predictor):
         tlist = map(lambda x: x[0], tuples)
         ylist = map(lambda x: x[1][1], tuples)
         try:
-            self.popt, pcov = curve_fit(f, tlist, ylist) #TODO deal with RuntimeError
-        except RuntimeError:
-            pass
+            self.popt, pcov = curve_fit(f, tlist, ylist, maxfev=2500)
+            print self.popt
+        except RuntimeError as e:
+            print "ERROR: ", e
+            sys.stdout.flush()
 
         return (0, f(t, self.popt[0], self.popt[1], self.popt[2]), 0)
