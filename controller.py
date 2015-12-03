@@ -15,8 +15,7 @@ POST_RECOVER = np.array([0.0, 1.0, -.98, .8, math.pi/2, 0.0, 0.0])
 
 BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
-
-TRAVELTIME = 0.8
+TRAVELTIMES = [2.08, 2.46, 2.76]
 
 class MyController:
     """Attributes:
@@ -77,8 +76,8 @@ class MyController:
 
     '''Returns whether center of goal will be free in TRAVELTIME seconds'''
     def noblock(self):
-        for goalie in GOALIES:
-            yhat = self.goaliePredictor.predict(self.t + TRAVELTIME, goalie)[1]
+        for i in range(len(GOALIES)):
+            yhat = self.goaliePredictor.predict(self.t + TRAVELTIMES[i], GOALIES[i])[1]
             if abs(yhat) <= .5:
                 return False
         return True
@@ -136,7 +135,7 @@ class MyController:
                 self.substate = 0
 
         if self.state == 'precycle0':
-            moveAndGoToState(PRE_CYCLE0, 'pre_stroke', 20)
+            moveAndGoToState(PREP_RECOVER, 'recover', 30)
         if self.state == 'pre_stroke':
             moveAndGoToState(PREP_STROKE, 'waiting', 10)
         if self.state == 'waiting':
@@ -151,6 +150,8 @@ class MyController:
         if self.state == 'user':
             robotController.setPIDCommand(self.qdes,[0.0]*7)
 
+        print self.t
+        print self.state
         sys.stdout.flush()
         return
         
