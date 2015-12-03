@@ -7,6 +7,7 @@ import sys
 import time
 import matplotlib.pyplot as plot
 
+PRE_CYCLE0 = [0.0, 1.0, -.5, 1.32, math.pi/2, 0.0, 0.0]
 PREP_STROKE = [0.0, 1.0, -.98, 1.32, math.pi/2, 0.0, 0.0]
 POST_STROKE = [0.0, 2.0, -.98, 1.32, math.pi/2, 0.0, 0.0]
 PREP_RECOVER = [0.0, 2.0, -.98, .8, math.pi/2, 0.0, 0.0]
@@ -16,6 +17,7 @@ BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
 
 TRAVELTIME = 0.8
+STROKE_FRAMES = 10
 
 class MyController:
     """Attributes:
@@ -48,7 +50,7 @@ class MyController:
         self.ballPredictor = LinearPredictor()
         self.goaliePredictor = YSinePredictor()
         self.objectEstimates = None
-        self.state = 'pre_stroke'
+        self.state = 'precycle0'
         self.qdes = robotController.getCommandedConfig()
         self.t = 0
 
@@ -120,29 +122,25 @@ class MyController:
             for goalie in GOALIES:
                 self.goaliePredictor.addPoint(self.t, objectStateEstimate.get(goalie))
 
-        if self.state == 'pre_stroke':
-            self.qdes = PREP_STROKE
+        def moveAndGoToState(qdes, next_state):
+            self.qdes = qdes
             robotController.setPIDCommand(self.qdes,[0.0]*7)
             if self.close(qsns, self.qdes):
-                self.state = 'waiting'
+                self.state = next_state
+
+        if self.state == 'precycle0':
+            moveAndGoToState(PRE_CYCLE0, 'pre_stroke')
+        if self.state == 'pre_stroke':
+            moveAndGoToState(PREP_STROKE, 'waiting')
         if self.state == 'waiting':
             if self.ballWaiting(objectStateEstimate.get(BALL)) and self.noblock():
                 self.state = 'stroke'
         if self.state == 'stroke':
-            self.qdes = POST_STROKE
-            robotController.setPIDCommand(self.qdes,[0.0]*7)
-            if self.close(qsns, self.qdes):
-                self.state = 'pre_recover'
+            moveAndGoToState(POST_STROKE, 'pre_recover')
         if self.state == 'pre_recover':
-            self.qdes = PREP_RECOVER
-            robotController.setPIDCommand(self.qdes,[0.0]*7)
-            if self.close(qsns, self.qdes):
-                self.state = 'recover'
+            moveAndGoToState(PREP_RECOVER, 'recover')
         if self.state == 'recover':
-            self.qdes = POST_RECOVER
-            robotController.setPIDCommand(self.qdes,[0.0]*7)
-            if self.close(qsns, self.qdes):
-                self.state = 'pre_stroke'
+            moveAndGoToState(POST_RECOVER, 'pre_stroke')
         if self.state == 'user':
             robotController.setPIDCommand(self.qdes,[0.0]*7)
 
@@ -198,6 +196,8 @@ class MyController:
                 self.qdes[upkeys[key]] += 0.1
             elif key in downkeys:
                 self.qdes[downkeys[key]] -= 0.1
+            print self.qdes
+            sys.stdout.flush()
     
     def drawGL(self):
         """This gets called every time an OpenGL rendering loop is called.
