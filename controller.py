@@ -17,6 +17,8 @@ BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
 TRAVELTIMES = [1.94, 2.3, 2.6]
 
+STILL_LIMIT = .01
+
 class MyController:
     """Attributes:
     - world: the WorldModel instance used for planning.
@@ -139,7 +141,7 @@ class MyController:
         if self.state == 'pre_stroke':
             moveAndGoToState(PREP_STROKE, 'waiting', 10)
         if self.state == 'waiting':
-            if self.ballWaiting(objectStateEstimate.get(BALL)) and self.noblock():
+            if np.linalg.norm(vsns) < STILL_LIMIT and self.ballWaiting(objectStateEstimate.get(BALL)) and self.noblock():
                 self.state = 'stroke'
         if self.state == 'stroke':
             moveAndGoToState(POST_STROKE, 'pre_recover', 22)
