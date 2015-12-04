@@ -2,6 +2,7 @@ import numpy as np
 import math
 import sys
 from scipy.optimize import curve_fit
+import matplotlib.pyplot as plot
 
 MAX_HISTORY = 300
 
@@ -64,7 +65,7 @@ class YSinePredictor(Predictor):
         tlist = np.array(map(lambda x: x[0], tuples))
         ylist = np.array(map(lambda x: x[1][1], tuples))
         try:
-            self.popt, _ = curve_fit(f, tlist, ylist, maxfev=2500)
+            self.popt, _ = curve_fit(f, tlist, ylist, p0=[1, .6, 1, 0])                
         except RuntimeError as e:
             print "ERROR: ", e
             sys.stdout.flush()
