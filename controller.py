@@ -13,6 +13,9 @@ POST_STROKE = np.array([0.0, 2.0, -.98, 1.32, math.pi/2, 0.0, 0.0])
 PREP_RECOVER = np.array([0.0, 2.0, -.98, .8, math.pi/2, 0.0, 0.0])
 POST_RECOVER = np.array([0.0, 1.0, -.98, .8, math.pi/2, 0.0, 0.0])
 
+PREP_STROKE = np.array([0.0, 1.0, -.98, 1.32, math.pi/2, .5, 0.0])
+POST_STROKE = np.array([0.0, 2.0, -.98, 1.32, math.pi/2, .5, 0.0])
+
 BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
 TRAVELTIMES = [1.94, 2.3, 2.6]
@@ -73,8 +76,10 @@ class MyController:
         v = ballState.meanVelocity()
         return (-1.5 < p[0] and p[0] < -0.5 and
                 -1.0 < p[1] and p[1] < +0.0 and
+                .072 < p[2] and p[2] < .082 and
                 -0.5 < v[0] and v[0] < +0.5 and
-                -0.5 < v[1] and v[1] < +0.5)
+                -0.5 < v[1] and v[1] < +0.5 and
+                -.01 < v[2] and v[2] < +.01)
 
     '''Returns whether center of goal will be free in TRAVELTIME seconds'''
     def noblock(self):
