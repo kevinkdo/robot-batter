@@ -16,6 +16,10 @@ POST_RECOVER = np.array([0.0, 1.0, -.98, .8, math.pi/2, 0.0, 0.0])
 PREP_STROKE2 = np.array([0.0, 1.0, -.98, 1.4, 1.67, 0, 1.6])
 POST_STROKE2 = np.array([0.0, 2.0, -.98, 1.4, 1.67, 0, 1.6])
 
+PREP_STROKE3 = np.array([0.0, 1.0, -1.08, 1.187, math.pi/2, 0.0, 0.0])
+POST_STROKE3 = np.array([0.0, 2.0, -1.08, 1.187, math.pi/2, 0.0, 0.0])
+
+
 BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
 TRAVELTIMES = [1.94, 2.3, 2.6]
@@ -142,7 +146,7 @@ class MyController:
                 self.substate = 0
 
         if self.state == 'precycle0':
-            moveAndGoToState(PREP_RECOVER, 'recover', 30)
+            moveAndGoToState(PREP_STROKE, 'waiting', 22)
         if self.state == 'pre_stroke':
             moveAndGoToState(PREP_STROKE, 'waiting', 10)
         if self.state == 'waiting':
