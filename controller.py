@@ -13,8 +13,8 @@ POST_STROKE = np.array([0.0, 2.0, -.98, 1.32, math.pi/2, 0.0, 0.0])
 PREP_RECOVER = np.array([0.0, 2.0, -.98, .8, math.pi/2, 0.0, 0.0])
 POST_RECOVER = np.array([0.0, 1.0, -.98, .8, math.pi/2, 0.0, 0.0])
 
-PREP_STROKE = np.array([0.0, 1.0, -.98, 1.32, math.pi/2, .5, 0.0])
-POST_STROKE = np.array([0.0, 2.0, -.98, 1.32, math.pi/2, .5, 0.0])
+PREP_STROKE2 = np.array([0.0, 1.0, -.98, 1.4, 1.67, 0, 1.6])
+POST_STROKE2 = np.array([0.0, 2.0, -.98, 1.4, 1.67, 0, 1.6])
 
 BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
