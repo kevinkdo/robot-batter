@@ -7,18 +7,22 @@ import sys
 import time
 import matplotlib.pyplot as plot
 
-PRE_CYCLE0 = np.array([0.0, 1.0, -.5, 1.32, math.pi/2, 0.0, 0.0])
-PREP_STROKE = np.array([0.0, 1.0, -.98, 1.32, math.pi/2, 0.0, 0.0])
-POST_STROKE = np.array([0.0, 2.0, -.98, 1.32, math.pi/2, 0.0, 0.0])
+LOG_BALL_PATH = True
+NUM_TRIALS = 10
+TRIAL_LENGTH = 150
+
 PREP_RECOVER = np.array([0.0, 2.0, -.98, .8, math.pi/2, 0.0, 0.0])
 POST_RECOVER = np.array([0.0, 1.0, -.98, .8, math.pi/2, 0.0, 0.0])
 
-PREP_STROKE2 = np.array([0.0, 1.0, -.98, 1.4, 1.67, 0, 1.6])
-POST_STROKE2 = np.array([0.0, 2.0, -.98, 1.4, 1.67, 0, 1.6])
+PREP_STROKE_L = np.array([0.0, 1.0, -1.08, 1.187, math.pi/2, 0.0, 0.0])
+POST_STROKE_L = np.array([0.0, 2.0, -1.08, 1.187, math.pi/2, 0.0, 0.0])
+PREP_STROKE_C = np.array([0.0, 1.0, -.98, 1.32, math.pi/2, 0.0, 0.0])
+POST_STROKE_C = np.array([0.0, 2.0, -.98, 1.32, math.pi/2, 0.0, 0.0])
+PREP_STROKE_R = np.array([0.0, 1.0, -.98, 1.4, 1.67, 0, 1.6])
+POST_STROKE_R = np.array([0.0, 2.0, -.98, 1.4, 1.67, 0, 1.6])
 
-PREP_STROKE3 = np.array([0.0, 1.0, -1.08, 1.187, math.pi/2, 0.0, 0.0])
-POST_STROKE3 = np.array([0.0, 2.0, -1.08, 1.187, math.pi/2, 0.0, 0.0])
-
+PREP_STROKE = PREP_STROKE_R
+POST_STROKE = POST_STROKE_R
 
 BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
@@ -60,6 +64,11 @@ class MyController:
         self.qdes = robotController.getCommandedConfig()
         self.t = 0
         self.substate = 0
+
+        if LOG_BALL_PATH:
+            self.xplot = [[] for i in range(NUM_TRIALS)]
+            self.yplot = [[] for i in range(NUM_TRIALS)]
+            self.trial = -1
 
     '''Returns whether q1 is close to q2'''
     def close(self, q1, q2):
@@ -153,6 +162,8 @@ class MyController:
             if self.ballWaiting(objectStateEstimate.get(BALL)) and self.noblock():
                 self.state = 'stroke'
         if self.state == 'stroke':
+            if LOG_BALL_PATH and self.substate == 0:
+                self.trial += 1
             moveAndGoToState(POST_STROKE, 'pre_recover', 22)
         if self.state == 'pre_recover':
             moveAndGoToState(PREP_RECOVER, 'recover', 10)
@@ -160,6 +171,18 @@ class MyController:
             moveAndGoToState(POST_RECOVER, 'pre_stroke', 25)
         if self.state == 'user':
             robotController.setPIDCommand(self.qdes,[0.0]*7)
+
+        if LOG_BALL_PATH:
+            if self.trial < NUM_TRIALS:
+                if len(self.xplot[self.trial]) < TRIAL_LENGTH:
+                    ballstate = objectStateEstimate.get(BALL)
+                    self.xplot[self.trial].append(ballstate.meanPosition()[0])
+                    self.yplot[self.trial].append(ballstate.meanPosition()[1])
+            else:
+                print np.array(self.yplot).shape
+                np.save('x.npy', np.array(self.xplot))
+                np.save('y.npy', np.array(self.yplot))
+                sys.exit()
 
         #print self.t
         #print self.state
