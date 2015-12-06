@@ -7,26 +7,31 @@ import sys
 import time
 import matplotlib.pyplot as plot
 
-LOG_BALL_PATH = True
+LOG_BALL_PATH = False
 NUM_TRIALS = 10
 TRIAL_LENGTH = 150
 
 PREP_RECOVER = np.array([0.0, 2.0, -.98, .8, math.pi/2, 0.0, 0.0])
-POST_RECOVER = np.array([0.0, 1.0, -.98, .8, math.pi/2, 0.0, 0.0])
+POST_RECOVER = np.array([0.0, 1.0, -.98, 1.32, math.pi/2, 0.0, 0.0])
 
-PREP_STROKE_L = np.array([0.0, 1.0, -1.08, 1.187, math.pi/2, 0.0, 0.0])
-POST_STROKE_L = np.array([0.0, 2.0, -1.08, 1.187, math.pi/2, 0.0, 0.0])
-PREP_STROKE_C = np.array([0.0, 1.0, -.98, 1.32, math.pi/2, 0.0, 0.0])
-POST_STROKE_C = np.array([0.0, 2.0, -.98, 1.32, math.pi/2, 0.0, 0.0])
-PREP_STROKE_R = np.array([0.0, 1.0, -.98, 1.4, 1.67, 0, 1.6])
-POST_STROKE_R = np.array([0.0, 2.0, -.98, 1.4, 1.67, 0, 1.6])
+STROKES = np.array([[0.0, 1.0, -1.08, 1.187, math.pi/2, 0.0, 0.0],#PREP_L
+                    [0.0, 2.0, -1.08, 1.187, math.pi/2, 0.0, 0.0],#POST_L
+                    [0.0, 1.0, -0.98 , 1.32, math.pi/2, 0.0, 0.0],#PREP_C
+                    [0.0, 2.0, -0.98 , 1.32, math.pi/2, 0.0, 0.0],#POST_C
+                    [0.0, 1.0, -0.98 , 1.40, 1.67     , 0.0, 1.6],#PREP_R
+                    [0.0, 2.0, -0.98 , 1.40, 1.67     , 0.0, 1.6]])#POST_R
 
-PREP_STROKE = PREP_STROKE_R
-POST_STROKE = POST_STROKE_R
+TRAVELTIMES = [[1.986, 2.293, 2.606],
+               [1.973, 2.273, 2.573],
+               [2.053, 2.366, 2.680]]
+
+INTERSECTIONS = [[+.30, +.45, +.60],
+                 [-.10, -.05, +0.0],
+                 [-.60, -.61, -.63]]
 
 BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
-TRAVELTIMES = [1.94, 2.3, 2.6]
+
 
 STILL_LIMIT = .01
 
@@ -94,13 +99,19 @@ class MyController:
                 -0.5 < v[1] and v[1] < +0.5 and
                 -.01 < v[2] and v[2] < +.01)
 
-    '''Returns whether center of goal will be free in TRAVELTIME seconds'''
-    def noblock(self):
-        for i in range(len(GOALIES)):
-            yhat = self.goaliePredictor.predict(self.t + TRAVELTIMES[i], GOALIES[i])[1]
-            if abs(yhat) <= .5:
-                return False
-        return True
+    '''Returns index of best stroke (0, 1, 2) or -1 to indicate no valid path'''
+    def best_stroke(self):
+        answer = -1
+        best_clearance = .75
+        for i in range(len(TRAVELTIMES)):
+            clearance = 50
+            for j in range(len(GOALIES)):
+                yhat = self.goaliePredictor.predict(self.t + TRAVELTIMES[i][j], GOALIES[j])[1]
+                clearance = min(clearance, abs(yhat - INTERSECTIONS[i][j]))
+            if clearance > best_clearance:
+                answer = i
+                best_clearance = clearance
+        return answer
 
     def myPlayerLogic(self,
                       dt,
@@ -149,22 +160,26 @@ class MyController:
             if self.substate < frames:
                 self.substate += 1
             next_goal = self.start + (1.0 * self.substate / frames) * (self.qdes - self.start)
-            robotController.setPIDCommand(next_goal,[0.0]*7)
+            robotController.setPIDCommand(next_goal, [0.0]*7)
             if self.close(qsns, self.qdes) and np.linalg.norm(vsns) < STILL_LIMIT:
                 self.state = next_state
                 self.substate = 0
 
         if self.state == 'precycle0':
-            moveAndGoToState(PREP_STROKE, 'waiting', 22)
+            moveAndGoToState(POST_RECOVER, 'waiting', 22)
         if self.state == 'pre_stroke':
-            moveAndGoToState(PREP_STROKE, 'waiting', 10)
+            moveAndGoToState(POST_RECOVER, 'waiting', 10)
         if self.state == 'waiting':
-            if self.ballWaiting(objectStateEstimate.get(BALL)) and self.noblock():
-                self.state = 'stroke'
-        if self.state == 'stroke':
+            best_stroke = self.best_stroke()
+            if self.ballWaiting(objectStateEstimate.get(BALL)) and best_stroke != -1:
+                self.state = 'stroke' + str(best_stroke)
+                robotController.setPIDCommand(STROKES[2 * best_stroke], [0.0]*7)
+        if self.state[:6] == 'stroke':
             if LOG_BALL_PATH and self.substate == 0:
                 self.trial += 1
-            moveAndGoToState(POST_STROKE, 'pre_recover', 22)
+
+            stroke_index = int(self.state[6])
+            moveAndGoToState(STROKES[2 * stroke_index + 1], 'pre_recover', 22)
         if self.state == 'pre_recover':
             moveAndGoToState(PREP_RECOVER, 'recover', 10)
         if self.state == 'recover':
