@@ -132,7 +132,7 @@ class MyController:
                 self.substate += 1
             next_goal = self.start + (1.0 * self.substate / frames) * (self.qdes - self.start)
             robotController.setPIDCommand(next_goal,[0.0]*7)
-            if self.close(qsns, self.qdes):
+            if self.close(qsns, self.qdes) and np.linalg.norm(vsns) < STILL_LIMIT:
                 self.state = next_state
                 self.substate = 0
 
@@ -141,7 +141,7 @@ class MyController:
         if self.state == 'pre_stroke':
             moveAndGoToState(PREP_STROKE, 'waiting', 10)
         if self.state == 'waiting':
-            if np.linalg.norm(vsns) < STILL_LIMIT and self.ballWaiting(objectStateEstimate.get(BALL)) and self.noblock():
+            if self.ballWaiting(objectStateEstimate.get(BALL)) and self.noblock():
                 self.state = 'stroke'
         if self.state == 'stroke':
             moveAndGoToState(POST_STROKE, 'pre_recover', 22)
