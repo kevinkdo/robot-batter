@@ -32,7 +32,7 @@ INTERSECTIONS = [[+.30, +.45, +.60],
 BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
 
-
+SETUP_TIMES = [0.23, -.07, 0.43]
 STILL_LIMIT = .01
 
 class MyController:
@@ -106,7 +106,8 @@ class MyController:
         for i in range(len(TRAVELTIMES)):
             clearance = 50
             for j in range(len(GOALIES)):
-                yhat = self.goaliePredictor.predict(self.t + TRAVELTIMES[i][j], GOALIES[j])[1]
+                yhat = self.goaliePredictor.predict(self.t + TRAVELTIMES[i][j] + SETUP_TIMES[i], GOALIES[j])[1]
+                sys.stdout.flush()
                 clearance = min(clearance, abs(yhat - INTERSECTIONS[i][j]))
             if clearance > best_clearance:
                 answer = i
