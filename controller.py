@@ -102,7 +102,7 @@ class MyController:
     '''Returns index of best stroke (0, 1, 2) or -1 to indicate no valid path'''
     def best_stroke(self):
         answer = -1
-        best_clearance = .75
+        best_clearance = .6
         for i in range(len(TRAVELTIMES)):
             clearance = 50
             for j in range(len(GOALIES)):
@@ -167,13 +167,16 @@ class MyController:
 
         if self.state == 'precycle0':
             moveAndGoToState(POST_RECOVER, 'waiting', 22)
-        if self.state == 'pre_stroke':
+        if self.state == 'post_recover':
             moveAndGoToState(POST_RECOVER, 'waiting', 10)
         if self.state == 'waiting':
-            best_stroke = self.best_stroke()
-            if self.ballWaiting(objectStateEstimate.get(BALL)) and best_stroke != -1:
-                self.state = 'stroke' + str(best_stroke)
-                robotController.setPIDCommand(STROKES[2 * best_stroke], [0.0]*7)
+            if self.ballWaiting(objectStateEstimate.get(BALL)):
+                best_stroke = self.best_stroke()
+                if best_stroke != -1:
+                    self.state = 'pre_stroke' + str(best_stroke)
+        if self.state[:10] == 'pre_stroke':
+            stroke_index = int(self.state[10])
+            moveAndGoToState(STROKES[2 * stroke_index], 'stroke' + str(stroke_index), 1)
         if self.state[:6] == 'stroke':
             if LOG_BALL_PATH and self.substate == 0:
                 self.trial += 1
@@ -183,7 +186,7 @@ class MyController:
         if self.state == 'pre_recover':
             moveAndGoToState(PREP_RECOVER, 'recover', 10)
         if self.state == 'recover':
-            moveAndGoToState(POST_RECOVER, 'pre_stroke', 25)
+            moveAndGoToState(POST_RECOVER, 'post_recover', 25)
         if self.state == 'user':
             robotController.setPIDCommand(self.qdes,[0.0]*7)
 
