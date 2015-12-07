@@ -175,6 +175,8 @@ class MyController:
                 best_stroke = self.best_stroke()
                 if best_stroke != -1:
                     self.state = 'pre_stroke' + str(best_stroke)
+            else:
+                robotController.setPIDCommand(POST_RECOVER, [0.0]*7)
         if self.state[:10] == 'pre_stroke':
             stroke_index = int(self.state[10])
             moveAndGoToState(STROKES[2 * stroke_index], 'stroke' + str(stroke_index), 1)
