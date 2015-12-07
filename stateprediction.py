@@ -9,11 +9,14 @@ MAX_HISTORY = 300
 class Predictor:
     def __init__(self):
         self.objects = dict()
+        self.clean = dict()
+        self.parameter_cache = dict()
 
     '''t: time
        o: ObjectStateEstimate
        no return'''
     def addPoint(self, t, o):
+        self.clean[o.name] = False
         if not o.name in self.objects:
             self.objects[o.name] = []
         self.objects[o.name].append((t, o.meanPosition(), o.meanVelocity()))
@@ -65,9 +68,16 @@ class YSinePredictor(Predictor):
         tlist = np.array(map(lambda x: x[0], tuples))
         ylist = np.array(map(lambda x: x[1][1], tuples))
         try:
-            self.popt, _ = curve_fit(f, tlist, ylist, p0=[1, .6, 1, 0])                
+            if not self.clean[name]:
+                self.parameter_cache[name], _ = curve_fit(f, tlist, ylist, p0=[1, .6, 1, 0])
+                self.clean[name] = True
         except RuntimeError as e:
             print "ERROR: ", e
             sys.stdout.flush()
 
-        return (0, f(t, self.popt[0], self.popt[1], self.popt[2], self.popt[3]), 0)
+        return (0,
+                f(t, self.parameter_cache[name][0],
+                     self.parameter_cache[name][1],
+                     self.parameter_cache[name][2],
+                     self.parameter_cache[name][3]),
+                0)
