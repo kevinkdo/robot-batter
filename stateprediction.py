@@ -19,6 +19,7 @@ class Predictor:
         self.clean[o.name] = False
         if not o.name in self.objects:
             self.objects[o.name] = []
+            self.parameter_cache[o.name] = [1, .6, 1, 0]
         self.objects[o.name].append((t, o.meanPosition(), o.meanVelocity()))
         if len(self.objects[o.name]) > MAX_HISTORY:
             self.objects[o.name].pop(0)
@@ -69,7 +70,7 @@ class YSinePredictor(Predictor):
         ylist = np.array(map(lambda x: x[1][1], tuples))
         try:
             if not self.clean[name]:
-                self.parameter_cache[name], _ = curve_fit(f, tlist, ylist, p0=[1, .6, 1, 0])
+                self.parameter_cache[name], _ = curve_fit(f, tlist, ylist, p0=self.parameter_cache[name])
                 self.clean[name] = True
         except RuntimeError as e:
             print "ERROR: ", e
