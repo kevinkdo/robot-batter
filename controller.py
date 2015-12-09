@@ -8,31 +8,29 @@ import time
 import matplotlib.pyplot as plot
 
 LOG_BALL_PATH = False
-NUM_TRIALS = 10
-TRIAL_LENGTH = 150
+TRIAL_LENGTH = 1500
 
 PREP_RECOVER = np.array([0.0, 2.0, -.98, .8, math.pi/2, 0.0, 0.0])
-POST_RECOVER = np.array([0.0, 1.0, -.98, 1.32, math.pi/2, 0.0, 0.0])
+POST_RECOVER = np.array([0.0, 0.7, -.98, 1.32, math.pi/2, 0.0, 0.0])
 
-STROKES = np.array([[0.0, 1.0, -1.08, 1.187, math.pi/2, 0.0, 0.0],#PREP_L
+STROKES = np.array([[0.0, 0.7, -1.08, 1.187, math.pi/2, 0.0, 0.0],#PREP_L
                     [0.0, 2.0, -1.08, 1.187, math.pi/2, 0.0, 0.0],#POST_L
-                    [0.0, 1.0, -0.98 , 1.32, math.pi/2, 0.0, 0.0],#PREP_C
+                    [0.0, 0.7, -0.98 , 1.32, math.pi/2, 0.0, 0.0],#PREP_C
                     [0.0, 2.0, -0.98 , 1.32, math.pi/2, 0.0, 0.0],#POST_C
-                    [0.0, 1.0, -0.98 , 1.40, 1.67     , 0.0, 1.6],#PREP_R
-                    [0.0, 2.0, -0.98 , 1.40, 1.67     , 0.0, 1.6]])#POST_R
+                    [0.0, 0.7, -0.95 , 1.40, 1.67     , 0.0, 0.0],#PREP_R
+                    [0.0, 2.0, -0.95 , 1.40, 1.67     , 0.0, 0.0]])#POST_R
 
-TRAVELTIMES = [[1.986, 2.293, 2.606],
-               [1.973, 2.273, 2.573],
-               [2.053, 2.366, 2.680]]
+TRAVELTIMES = [[2.093, 2.373, 2.640],
+               [1.853, 2.133, 2.400],
+               [2.493, 2.800, 3.073]]
 
-INTERSECTIONS = [[+.30, +.45, +.60],
-                 [-.10, -.05, +0.0],
-                 [-.60, -.61, -.63]]
+INTERSECTIONS = [[+.20, +.30, +.40],
+                 [-.15, -.08, +.03],
+                 [-.65, -.67, -.70]]
 
 BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
-
-SETUP_TIMES = [0.23, -.07, 0.43]
+SETUP_TIMES = [0, 0, -.15]
 STILL_LIMIT = .01
 
 class MyController:
@@ -71,9 +69,8 @@ class MyController:
         self.substate = 0
 
         if LOG_BALL_PATH:
-            self.xplot = [[] for i in range(NUM_TRIALS)]
-            self.yplot = [[] for i in range(NUM_TRIALS)]
-            self.trial = -1
+            self.xplot = []
+            self.yplot = []
 
     '''Returns whether q1 is close to q2'''
     def close(self, q1, q2):
@@ -107,7 +104,6 @@ class MyController:
             clearance = 50
             for j in range(len(GOALIES)):
                 yhat = self.goaliePredictor.predict(self.t + TRAVELTIMES[i][j] + SETUP_TIMES[i], GOALIES[j])[1]
-                sys.stdout.flush()
                 clearance = min(clearance, abs(yhat - INTERSECTIONS[i][j]))
             if clearance > best_clearance:
                 answer = i
@@ -181,11 +177,8 @@ class MyController:
             stroke_index = int(self.state[10])
             moveAndGoToState(STROKES[2 * stroke_index], 'stroke' + str(stroke_index), 1)
         if self.state[:6] == 'stroke':
-            if LOG_BALL_PATH and self.substate == 0:
-                self.trial += 1
-
             stroke_index = int(self.state[6])
-            moveAndGoToState(STROKES[2 * stroke_index + 1], 'pre_recover', 22)
+            moveAndGoToState(STROKES[2 * stroke_index + 1], 'pre_recover', 25)
         if self.state == 'pre_recover':
             moveAndGoToState(PREP_RECOVER, 'recover', 10)
         if self.state == 'recover':
@@ -193,12 +186,11 @@ class MyController:
         if self.state == 'user':
             robotController.setPIDCommand(self.qdes,[0.0]*7)
 
-        if LOG_BALL_PATH:
-            if self.trial < NUM_TRIALS:
-                if len(self.xplot[self.trial]) < TRIAL_LENGTH:
-                    ballstate = objectStateEstimate.get(BALL)
-                    self.xplot[self.trial].append(ballstate.meanPosition()[0])
-                    self.yplot[self.trial].append(ballstate.meanPosition()[1])
+        if LOG_BALL_PATH and self.t:
+            if len(self.xplot) < TRIAL_LENGTH:
+                ballstate = objectStateEstimate.get(BALL)
+                self.xplot.append(ballstate.meanPosition()[0])
+                self.yplot.append(ballstate.meanPosition()[1])
             else:
                 print np.array(self.yplot).shape
                 np.save('x.npy', np.array(self.xplot))
