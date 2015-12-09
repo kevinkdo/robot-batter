@@ -85,6 +85,8 @@ class MyController:
 
     '''Returns whether the ball is waiting to be struck'''
     def ballWaiting(self, ballState):
+        if ballState is None:
+            return False
         p = ballState.meanPosition()
         v = ballState.meanVelocity()
         return (-1.5 < p[0] and p[0] < -0.5 and
