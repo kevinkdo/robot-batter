@@ -51,7 +51,6 @@ class MyController:
     def __init__(self,world,robotController):
         self.world = world
         self.objectStateEstimator = None
-        self.ballPredictor = None
         self.goaliePredictor = None
         self.state = None
         self.robotController = robotController
@@ -60,7 +59,6 @@ class MyController:
     def reset(self,robotController):
         """Called on initialization, and when the simulator is reset."""
         self.objectStateEstimator = MyObjectStateEstimator()
-        self.ballPredictor = LinearPredictor()
         self.goaliePredictor = YSinePredictor()
         self.objectEstimates = None
         self.state = 'precycle0'
@@ -144,7 +142,6 @@ class MyController:
         vsns = robotController.getSensedVelocity()
 
         if self.t > dt:
-            self.ballPredictor.addPoint(self.t, objectStateEstimate.get(BALL))
             for goalie in GOALIES:
                 self.goaliePredictor.addPoint(self.t, objectStateEstimate.get(goalie))
 

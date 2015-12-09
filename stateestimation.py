@@ -66,9 +66,26 @@ class MyObjectStateEstimator:
         return
     def reset(self):
         pass
-    def update(self,observation):
+    def update(self,o):
         """Produces an updated MultiObjectStateEstimate given a CameraColorDetectorOutput
         sensor reading."""
-        #TODO
-        return MultiObjectStateEstimate([])
+        assert isinstance(o,CameraColorDetectorOutput),"MyObjectStateEstimator only works with CameraColorDetectorOutput"
 
+        estimates = []
+        goalie_name = lambda x: (x[0], x[1], x[2], 1)
+        goalie_x = {(1, 0.5, 0): 2.0, (1, 1, 0): 2.5, (0.5, 1, 0): 3.0}#TODO make robust
+        for blob in o.blobs:
+            if blob.color != (1, 0, 0):
+                alpha = (goalie_x[blob.color] + 1.5) / 160.0
+                p_y = -.5 + alpha * (160 - blob.x)
+                p = [goalie_x[blob.color], p_y, 0]
+            else:
+                if blob.x > 150 and blob.y > 165 and blob.x < 170 and blob.y < 185 and blob.w > 45 and blob.w < 54 and blob.h > 43 and blob.h < 53:
+                    p = [-1, -.5, .077]
+                else:
+                    p = [-2, -.5, .077]
+
+            v = [0, 0, 0]
+            estimate = ObjectStateEstimate(goalie_name(blob.color), p+v)
+            estimates.append(estimate)
+        return MultiObjectStateEstimate(estimates)
