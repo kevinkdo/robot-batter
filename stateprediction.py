@@ -73,8 +73,9 @@ class YSinePredictor(Predictor):
                 self.parameter_cache[name], _ = curve_fit(f, tlist, ylist, p0=self.parameter_cache[name])
                 self.clean[name] = True
         except RuntimeError as e:
-            print "ERROR: ", e
+            print "Warning: ", e
             sys.stdout.flush()
+            return None
 
         return (0,
                 f(t, self.parameter_cache[name][0],

@@ -17,21 +17,22 @@ STROKES = np.array([[0.0, 0.7, -1.08, 1.187, math.pi/2, 0.0, 0.0],#PREP_L
                     [0.0, 2.0, -1.08, 1.187, math.pi/2, 0.0, 0.0],#POST_L
                     [0.0, 0.7, -0.98 , 1.32, math.pi/2, 0.0, 0.0],#PREP_C
                     [0.0, 2.0, -0.98 , 1.32, math.pi/2, 0.0, 0.0],#POST_C
-                    [0.0, 0.7, -0.95 , 1.40, 1.67     , 0.0, 0.0],#PREP_R
-                    [0.0, 2.0, -0.95 , 1.40, 1.67     , 0.0, 0.0]])#POST_R
+                    [0.0, 0.7, -0.92 , 1.45, math.pi/2, 0.0, 0.0],#PREP_R
+                    [0.0, 2.0, -0.92 , 1.45, math.pi/2, 0.0, 0.0]])#POST_R
 
 TRAVELTIMES = [[2.093, 2.373, 2.640],
                [1.853, 2.133, 2.400],
-               [2.493, 2.800, 3.073]]
+               [2.173, 2.467, 2.740]]
 
 INTERSECTIONS = [[+.20, +.30, +.40],
                  [-.15, -.08, +.03],
-                 [-.65, -.67, -.70]]
+                 [-.73, -.77, -.80]]
 
 BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
-SETUP_TIMES = [0, 0, -.15]
+SETUP_TIMES = [0, 0, 0]
 STILL_LIMIT = .01
+MIN_CLEARANCE = 0.6
 
 class MyController:
     """Attributes:
@@ -99,11 +100,14 @@ class MyController:
     '''Returns index of best stroke (0, 1, 2) or -1 to indicate no valid path'''
     def best_stroke(self):
         answer = -1
-        best_clearance = .6
+        best_clearance = MIN_CLEARANCE
         for i in range(len(TRAVELTIMES)):
             clearance = 50
             for j in range(len(GOALIES)):
-                yhat = self.goaliePredictor.predict(self.t + TRAVELTIMES[i][j] + SETUP_TIMES[i], GOALIES[j])[1]
+                prediction = self.goaliePredictor.predict(self.t + TRAVELTIMES[i][j] + SETUP_TIMES[i], GOALIES[j])
+                if prediction is None:
+                    return -1
+                yhat = prediction[1]
                 clearance = min(clearance, abs(yhat - INTERSECTIONS[i][j]))
             if clearance > best_clearance:
                 answer = i
