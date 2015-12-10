@@ -198,6 +198,8 @@ class MyController:
                 print np.array(self.yplot).shape
                 np.save('x.npy', np.array(self.xplot))
                 np.save('y.npy', np.array(self.yplot))
+                plot.scatter(self.xplot, self.yplot)
+                plot.show()
                 sys.exit()
 
         #print self.t
