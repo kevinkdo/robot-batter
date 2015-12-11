@@ -32,7 +32,7 @@ BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
 SETUP_TIMES = [0, 0, 0]
 STILL_LIMIT = .01
-MIN_CLEARANCE = 0.65
+MIN_CLEARANCE = 0.55
 INIT_TIME = 2.0
 
 class MyController:
@@ -186,7 +186,7 @@ class MyController:
         if self.state == 'pre_recover':
             moveAndGoToState(PREP_RECOVER, 'recover', 10)
         if self.state == 'recover':
-            moveAndGoToState(POST_RECOVER, 'post_recover', 25)
+            moveAndGoToState(POST_RECOVER, 'waiting', 25)
         if self.state == 'user':
             robotController.setPIDCommand(self.qdes,[0.0]*7)
 
