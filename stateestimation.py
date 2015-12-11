@@ -73,7 +73,7 @@ class MyObjectStateEstimator:
 
         estimates = []
         goalie_name = lambda x: (x[0], x[1], x[2], 1)
-        goalie_x = {(1, 0.5, 0): 2.0, (1, 1, 0): 2.5, (0.5, 1, 0): 3.0}#TODO make robust
+        goalie_x = {(1, 0.5, 0): 2.0, (1, 1, 0): 2.5, (0.5, 1, 0): 3.0}
         for blob in o.blobs:
             if blob.color != (1, 0, 0):
                 alpha = (goalie_x[blob.color] + 1.5) / 160.0

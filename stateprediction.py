@@ -16,6 +16,8 @@ class Predictor:
        o: ObjectStateEstimate
        no return'''
     def addPoint(self, t, o):
+        if o is None:
+            return
         self.clean[o.name] = False
         if not o.name in self.objects:
             self.objects[o.name] = []
