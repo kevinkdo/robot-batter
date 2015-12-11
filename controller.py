@@ -32,7 +32,8 @@ BALL = (1, 0, 0, 1)
 GOALIES = [(1, 0.5, 0, 1), (1, 1, 0, 1), (0.5, 1, 0, 1)]
 SETUP_TIMES = [0, 0, 0]
 STILL_LIMIT = .01
-MIN_CLEARANCE = 0.6
+MIN_CLEARANCE = 0.65
+INIT_TIME = 2.0
 
 class MyController:
     """Attributes:
@@ -170,7 +171,7 @@ class MyController:
         if self.state == 'post_recover':
             moveAndGoToState(POST_RECOVER, 'waiting', 10)
         if self.state == 'waiting':
-            if self.ballWaiting(objectStateEstimate.get(BALL)):
+            if self.ballWaiting(objectStateEstimate.get(BALL)) and self.t > INIT_TIME:
                 best_stroke = self.best_stroke()
                 if best_stroke != -1:
                     self.state = 'pre_stroke' + str(best_stroke)
@@ -228,7 +229,7 @@ class MyController:
         if 'omniscient' in sensorReadings:
             omniscientObjectState = OmniscientStateEstimator().update(sensorReadings['omniscient'])
             #TODO: Comment out the following line when you are ready to test your state estimator
-            multiObjectStateEstimate  = omniscientObjectState
+            #multiObjectStateEstimate  = omniscientObjectState
 
         self.myPlayerLogic(dt,
                            sensorReadings,multiObjectStateEstimate,

@@ -8,7 +8,7 @@ import random
 import traceback
 
 #TODO: change this to False when you are ready to test your state estimator
-omniscientSensor = True
+omniscientSensor = False
 
 #TODO: change this to random.seed() when you are ready to stress-test your
 #controller
