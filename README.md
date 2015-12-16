@@ -1,5 +1,5 @@
 # Robot Batter
-ECE 383 Robotics Final Project
+Final Project for Professor Kris Hauser's ECE 383 Robotics course at Duke University
 
 ## Video
 [https://www.youtube.com/watch?v=670JgHu9kck](https://www.youtube.com/watch?v=670JgHu9kck)
